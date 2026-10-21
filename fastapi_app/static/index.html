@@ -1,0 +1,622 @@
+<!DOCTYPE html>
+<html lang="vi" class="dark">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>YouTube Sentiment AI Analyzer</title>
+  <!-- Tailwind CSS CDN -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <!-- Font Awesome Icons -->
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+  <!-- Google Fonts: Inter -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+  <!-- Chart.js CDN -->
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
+  <script>
+    tailwind.config = {
+      darkMode: 'class',
+      theme: {
+        extend: {
+          fontFamily: {
+            sans: ['Inter', 'sans-serif'],
+            mono: ['JetBrains Mono', 'monospace'],
+          },
+          colors: {
+            brand: {
+              red: '#FF0000',
+              dark: '#0F0F0F',
+              card: '#1F1F1F',
+              border: '#2E2E2E',
+              accent: '#3EA6FF'
+            }
+          }
+        }
+      }
+    }
+  </script>
+  <style>
+    body {
+      background-color: #0b0f17;
+      color: #f1f5f9;
+    }
+    .custom-scrollbar::-webkit-scrollbar {
+      width: 6px;
+    }
+    .custom-scrollbar::-webkit-scrollbar-track {
+      background: #1e293b;
+    }
+    .custom-scrollbar::-webkit-scrollbar-thumb {
+      background: #475569;
+      border-radius: 3px;
+    }
+    .glow-effect {
+      box-shadow: 0 0 25px -5px rgba(239, 68, 68, 0.2);
+    }
+  </style>
+</head>
+<body class="min-h-screen flex flex-col font-sans selection:bg-red-500 selection:text-white">
+
+  <!-- Top Navigation -->
+  <header class="border-b border-slate-800 bg-slate-900/80 backdrop-blur sticky top-0 z-50">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between">
+      <div class="flex items-center space-x-3">
+        <div class="w-10 h-10 rounded-xl bg-gradient-to-tr from-red-600 to-rose-500 flex items-center justify-center text-white shadow-lg shadow-red-500/20">
+          <i class="fa-brands fa-youtube text-xl"></i>
+        </div>
+        <div>
+          <h1 class="text-lg font-bold text-white flex items-center gap-2">
+            YouTube Sentiment AI
+            <span class="text-xs bg-red-500/20 text-red-400 border border-red-500/30 px-2 py-0.5 rounded-full font-medium">BiLSTM</span>
+          </h1>
+          <p class="text-xs text-slate-400">Phân tích cảm xúc bình luận YouTube thời gian thực</p>
+        </div>
+      </div>
+
+      <div class="flex items-center space-x-3">
+        <div class="hidden sm:flex items-center space-x-2 text-xs bg-slate-800/80 border border-slate-700/60 px-3 py-1.5 rounded-lg text-emerald-400">
+          <span class="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></span>
+          <span>Mô hình sẵn sàng</span>
+        </div>
+        <a href="/docs" target="_blank" class="text-xs flex items-center gap-1.5 text-slate-300 hover:text-white bg-slate-800 hover:bg-slate-700 px-3 py-1.5 rounded-lg border border-slate-700 transition">
+          <i class="fa-solid fa-code"></i>
+          <span>API Docs</span>
+        </a>
+      </div>
+    </div>
+  </header>
+
+  <!-- Main Content Container -->
+  <main class="flex-1 max-w-7xl w-full mx-auto px-4 sm:px-6 lg:px-8 py-8 space-y-8">
+
+    <!-- Input Card -->
+    <section class="bg-slate-900/90 border border-slate-800 rounded-2xl p-6 shadow-xl relative overflow-hidden">
+      <div class="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-4">
+        <div>
+          <h2 class="text-xl font-bold text-white flex items-center gap-2">
+            <i class="fa-solid fa-comments text-red-500"></i>
+            Nhập bình luận cần phân tích
+          </h2>
+          <p class="text-sm text-slate-400 mt-1">
+            Hỗ trợ phân tích một hoặc nhiều bình luận cùng lúc (mỗi dòng là một bình luận).
+          </p>
+        </div>
+
+        <!-- Quick Sample Prompts -->
+        <div class="flex flex-wrap items-center gap-2 text-xs">
+          <span class="text-slate-400"><i class="fa-solid fa-wand-magic-sparkles mr-1 text-amber-400"></i>Mẫu thử:</span>
+          <button onclick="insertSample('pos')" class="px-2.5 py-1 rounded-md bg-emerald-500/10 hover:bg-emerald-500/20 text-emerald-400 border border-emerald-500/20 transition">
+            👍 Tích cực
+          </button>
+          <button onclick="insertSample('neg')" class="px-2.5 py-1 rounded-md bg-rose-500/10 hover:bg-rose-500/20 text-rose-400 border border-rose-500/20 transition">
+            👎 Tiêu cực
+          </button>
+          <button onclick="insertSample('neu')" class="px-2.5 py-1 rounded-md bg-amber-500/10 hover:bg-amber-500/20 text-amber-400 border border-amber-500/20 transition">
+            😐 Trung tính
+          </button>
+          <button onclick="insertSample('batch')" class="px-2.5 py-1 rounded-md bg-sky-500/10 hover:bg-sky-500/20 text-sky-400 border border-sky-500/20 transition">
+            📦 Batch 5 câu
+          </button>
+        </div>
+      </div>
+
+      <!-- Textarea Input -->
+      <div class="relative">
+        <textarea id="commentsInput" rows="5"
+          placeholder="Nhập hoặc dán các bình luận YouTube vào đây...&#10;Ví dụ:&#10;This tutorial is extremely clear and helpful! Thank you!&#10;Total waste of time, totally unhelpful.&#10;The timestamp for part 2 is at 05:20."
+          class="w-full bg-slate-950/80 border border-slate-800 rounded-xl p-4 text-sm text-slate-100 placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-red-500 focus:border-transparent transition resize-y font-sans custom-scrollbar leading-relaxed"></textarea>
+      </div>
+
+      <!-- Action Buttons -->
+      <div class="flex items-center justify-between mt-4">
+        <span id="commentCounter" class="text-xs text-slate-500 font-mono">0 bình luận</span>
+        
+        <div class="flex items-center space-x-3">
+          <button onclick="clearInput()" class="text-xs text-slate-400 hover:text-slate-200 px-3 py-2 rounded-lg hover:bg-slate-800 transition">
+            <i class="fa-solid fa-trash-can mr-1.5"></i>Xóa
+          </button>
+          <button id="analyzeBtn" onclick="analyzeComments()" class="px-6 py-2.5 rounded-xl bg-gradient-to-r from-red-600 to-rose-600 hover:from-red-500 hover:to-rose-500 text-white font-semibold text-sm shadow-lg shadow-red-600/30 flex items-center gap-2 transition duration-200 disabled:opacity-50 disabled:cursor-not-allowed">
+            <i class="fa-solid fa-bolt"></i>
+            <span>Phân tích cảm xúc</span>
+          </button>
+        </div>
+      </div>
+    </section>
+
+    <!-- Error Alert Box -->
+    <div id="errorBox" class="hidden bg-rose-500/10 border border-rose-500/30 text-rose-400 p-4 rounded-xl text-sm flex items-start gap-3">
+      <i class="fa-solid fa-triangle-exclamation text-lg mt-0.5"></i>
+      <div id="errorMessage">Có lỗi xảy ra khi kết nối tới API.</div>
+    </div>
+
+    <!-- Results Section (Initially Hidden) -->
+    <section id="resultsSection" class="hidden space-y-6">
+      
+      <!-- Stats Overview KPI Grid -->
+      <div class="grid grid-cols-2 md:grid-cols-4 gap-4">
+        <!-- Total -->
+        <div class="bg-slate-900/80 border border-slate-800 rounded-2xl p-5 flex items-center justify-between">
+          <div>
+            <p class="text-xs text-slate-400 uppercase tracking-wider font-semibold">Tổng bình luận</p>
+            <p id="totalCount" class="text-3xl font-extrabold text-white mt-1">0</p>
+          </div>
+          <div class="w-12 h-12 rounded-xl bg-slate-800 flex items-center justify-center text-slate-300 text-xl">
+            <i class="fa-solid fa-list-ol"></i>
+          </div>
+        </div>
+
+        <!-- Positive -->
+        <div class="bg-slate-900/80 border border-slate-800 rounded-2xl p-5 flex items-center justify-between">
+          <div>
+            <p class="text-xs text-emerald-400 uppercase tracking-wider font-semibold">Tích cực (Positive)</p>
+            <div class="flex items-baseline gap-2 mt-1">
+              <span id="posCount" class="text-3xl font-extrabold text-emerald-400">0</span>
+              <span id="posPercent" class="text-xs font-semibold text-emerald-500/80">0%</span>
+            </div>
+          </div>
+          <div class="w-12 h-12 rounded-xl bg-emerald-500/10 border border-emerald-500/20 flex items-center justify-center text-emerald-400 text-xl">
+            <i class="fa-regular fa-face-smile"></i>
+          </div>
+        </div>
+
+        <!-- Neutral -->
+        <div class="bg-slate-900/80 border border-slate-800 rounded-2xl p-5 flex items-center justify-between">
+          <div>
+            <p class="text-xs text-amber-400 uppercase tracking-wider font-semibold">Trung tính (Neutral)</p>
+            <div class="flex items-baseline gap-2 mt-1">
+              <span id="neuCount" class="text-3xl font-extrabold text-amber-400">0</span>
+              <span id="neuPercent" class="text-xs font-semibold text-amber-500/80">0%</span>
+            </div>
+          </div>
+          <div class="w-12 h-12 rounded-xl bg-amber-500/10 border border-amber-500/20 flex items-center justify-center text-amber-400 text-xl">
+            <i class="fa-regular fa-face-meh"></i>
+          </div>
+        </div>
+
+        <!-- Negative -->
+        <div class="bg-slate-900/80 border border-slate-800 rounded-2xl p-5 flex items-center justify-between">
+          <div>
+            <p class="text-xs text-rose-400 uppercase tracking-wider font-semibold">Tiêu cực (Negative)</p>
+            <div class="flex items-baseline gap-2 mt-1">
+              <span id="negCount" class="text-3xl font-extrabold text-rose-400">0</span>
+              <span id="negPercent" class="text-xs font-semibold text-rose-500/80">0%</span>
+            </div>
+          </div>
+          <div class="w-12 h-12 rounded-xl bg-rose-500/10 border border-rose-500/20 flex items-center justify-center text-rose-400 text-xl">
+            <i class="fa-regular fa-face-frown"></i>
+          </div>
+        </div>
+      </div>
+
+      <!-- Charts & Visual Verdict Row -->
+      <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+        <!-- Donut Chart -->
+        <div class="bg-slate-900/80 border border-slate-800 rounded-2xl p-6 flex flex-col items-center justify-center">
+          <h3 class="text-sm font-semibold text-slate-300 w-full mb-4 flex items-center gap-2">
+            <i class="fa-solid fa-chart-pie text-sky-400"></i>
+            Tỉ lệ phân bổ cảm xúc
+          </h3>
+          <div class="relative w-48 h-48">
+            <canvas id="sentimentChart"></canvas>
+          </div>
+        </div>
+
+        <!-- Sentiment Health Meter -->
+        <div class="md:col-span-2 bg-slate-900/80 border border-slate-800 rounded-2xl p-6 flex flex-col justify-between">
+          <div>
+            <div class="flex items-center justify-between mb-3">
+              <h3 class="text-sm font-semibold text-slate-300 flex items-center gap-2">
+                <i class="fa-solid fa-gauge-high text-red-500"></i>
+                Đánh giá mức độ hài lòng chung
+              </h3>
+              <span id="sentimentVerdictBadge" class="px-3 py-1 rounded-full text-xs font-bold uppercase tracking-wider">
+                --
+              </span>
+            </div>
+            <p id="sentimentVerdictDesc" class="text-sm text-slate-400 mb-6">
+              Dựa trên phân tích tất cả bình luận được cung cấp.
+            </p>
+          </div>
+
+          <!-- Progress Bar Multi-segments -->
+          <div class="space-y-2">
+            <div class="h-4 w-full bg-slate-800 rounded-full overflow-hidden flex shadow-inner">
+              <div id="barPos" class="h-full bg-emerald-500 transition-all duration-500" style="width: 0%"></div>
+              <div id="barNeu" class="h-full bg-amber-500 transition-all duration-500" style="width: 0%"></div>
+              <div id="barNeg" class="h-full bg-rose-500 transition-all duration-500" style="width: 0%"></div>
+            </div>
+            <div class="flex justify-between text-xs font-mono text-slate-500 pt-1">
+              <span class="flex items-center gap-1.5"><span class="w-2.5 h-2.5 rounded-full bg-emerald-500"></span>Tích cực</span>
+              <span class="flex items-center gap-1.5"><span class="w-2.5 h-2.5 rounded-full bg-amber-500"></span>Trung tính</span>
+              <span class="flex items-center gap-1.5"><span class="w-2.5 h-2.5 rounded-full bg-rose-500"></span>Tiêu cực</span>
+            </div>
+          </div>
+
+          <!-- Quick Export Controls -->
+          <div class="flex items-center justify-end gap-3 pt-4 border-t border-slate-800/80 mt-4">
+            <button onclick="exportCSV()" class="text-xs bg-slate-800 hover:bg-slate-700 text-slate-300 px-3 py-1.5 rounded-lg border border-slate-700 flex items-center gap-1.5 transition">
+              <i class="fa-solid fa-file-csv"></i>Xuất file CSV
+            </button>
+            <button onclick="copyJSON()" class="text-xs bg-slate-800 hover:bg-slate-700 text-slate-300 px-3 py-1.5 rounded-lg border border-slate-700 flex items-center gap-1.5 transition">
+              <i class="fa-solid fa-copy"></i>Copy JSON
+            </button>
+          </div>
+        </div>
+      </div>
+
+      <!-- Detailed Comment List -->
+      <div class="bg-slate-900/80 border border-slate-800 rounded-2xl overflow-hidden shadow-lg">
+        <div class="p-5 border-b border-slate-800 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+          <div class="flex items-center gap-3">
+            <h3 class="text-base font-bold text-white flex items-center gap-2">
+              <i class="fa-solid fa-list-check text-slate-400"></i>
+              Chi tiết bình luận & Phân loại
+            </h3>
+            <span id="filteredCount" class="text-xs bg-slate-800 px-2.5 py-0.5 rounded-full font-mono text-slate-400">0</span>
+          </div>
+
+          <!-- Filters -->
+          <div class="flex flex-wrap items-center gap-2">
+            <div class="flex items-center bg-slate-950 p-1 rounded-xl border border-slate-800 text-xs">
+              <button onclick="filterResults('all')" id="filter-all" class="filter-tab px-3 py-1 rounded-lg font-medium bg-slate-800 text-white">Tất cả</button>
+              <button onclick="filterResults('positive')" id="filter-positive" class="filter-tab px-3 py-1 rounded-lg font-medium text-slate-400 hover:text-white">Tích cực</button>
+              <button onclick="filterResults('neutral')" id="filter-neutral" class="filter-tab px-3 py-1 rounded-lg font-medium text-slate-400 hover:text-white">Trung tính</button>
+              <button onclick="filterResults('negative')" id="filter-negative" class="filter-tab px-3 py-1 rounded-lg font-medium text-slate-400 hover:text-white">Tiêu cực</button>
+            </div>
+          </div>
+        </div>
+
+        <!-- List Content -->
+        <div id="commentsList" class="divide-y divide-slate-800/80 max-h-[500px] overflow-y-auto custom-scrollbar">
+          <!-- Items populated via JS -->
+        </div>
+      </div>
+
+    </section>
+
+  </main>
+
+  <!-- Footer -->
+  <footer class="border-t border-slate-800/80 bg-slate-950 py-6 text-center text-xs text-slate-500">
+    <div class="max-w-7xl mx-auto px-4 flex flex-col sm:flex-row items-center justify-between gap-2">
+      <p>© 2026 YouTube Sentiment Analysis API • PyTorch BiLSTM + FastAPI</p>
+      <div class="flex items-center gap-4 text-slate-400">
+        <span>Model Version: 1.0</span>
+        <span>Vocab Size: 145,631</span>
+      </div>
+    </div>
+  </footer>
+
+  <!-- JavaScript Application Logic -->
+  <script>
+    let rawResults = [];
+    let currentFilter = 'all';
+    let sentimentChart = null;
+
+    // Counter listener for textarea
+    const textarea = document.getElementById('commentsInput');
+    const counter = document.getElementById('commentCounter');
+    textarea.addEventListener('input', () => {
+      const lines = textarea.value.split('\n').filter(l => l.trim().length > 0);
+      counter.textContent = `${lines.length} bình luận`;
+    });
+
+    // Sample inputs helper
+    function insertSample(type) {
+      if (type === 'pos') {
+        textarea.value = "This video is absolutely wonderful! It explained everything so clearly, thank you so much!";
+      } else if (type === 'neg') {
+        textarea.value = "Waste of time, terrible explanation and very boring.";
+      } else if (type === 'neu') {
+        textarea.value = "The tutorial was uploaded on Monday, 3pm.";
+      } else if (type === 'batch') {
+        textarea.value = [
+          "Best explanation I've ever seen on this topic! 10/10",
+          "Could you please share the code link in the description?",
+          "Completely useless tutorial, wasted 15 minutes of my life.",
+          "Clear audio, crisp visuals, and very informative.",
+          "I think the timestamp at 04:30 is slightly off."
+        ].join('\n');
+      }
+      textarea.dispatchEvent(new Event('input'));
+    }
+
+    function clearInput() {
+      textarea.value = '';
+      textarea.dispatchEvent(new Event('input'));
+      document.getElementById('resultsSection').classList.add('hidden');
+    }
+
+    // Call API and analyze
+    async function analyzeComments() {
+      const text = textarea.value.trim();
+      const errorBox = document.getElementById('errorBox');
+      const errorMessage = document.getElementById('errorMessage');
+      const analyzeBtn = document.getElementById('analyzeBtn');
+
+      errorBox.classList.add('hidden');
+
+      if (!text) {
+        showError("Vui lòng nhập ít nhất một bình luận để phân tích.");
+        return;
+      }
+
+      const comments = text.split('\n')
+        .map(c => c.trim())
+        .filter(c => c.length > 0);
+
+      if (comments.length === 0) {
+        showError("Không tìm thấy bình luận hợp lệ nào.");
+        return;
+      }
+
+      // UI Loading state
+      analyzeBtn.disabled = true;
+      analyzeBtn.innerHTML = `<i class="fa-solid fa-circle-notch fa-spin"></i><span>Đang phân tích...</span>`;
+
+      try {
+        const response = await fetch('/predict', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ comments: comments })
+        });
+
+        if (!response.ok) {
+          const errData = await response.json().catch(() => ({}));
+          throw new Error(errData.detail || `Lỗi máy chủ (${response.status})`);
+        }
+
+        const data = await response.json();
+        rawResults = data;
+        renderResults(data);
+      } catch (err) {
+        showError(err.message || "Không thể kết nối đến máy chủ API.");
+      } finally {
+        analyzeBtn.disabled = false;
+        analyzeBtn.innerHTML = `<i class="fa-solid fa-bolt"></i><span>Phân tích cảm xúc</span>`;
+      }
+    }
+
+    function showError(msg) {
+      const errorBox = document.getElementById('errorBox');
+      const errorMessage = document.getElementById('errorMessage');
+      errorMessage.textContent = msg;
+      errorBox.classList.remove('hidden');
+    }
+
+    // Render stats & chart
+    function renderResults(results) {
+      document.getElementById('resultsSection').classList.remove('hidden');
+
+      const total = results.length;
+      let pos = 0, neu = 0, neg = 0;
+
+      results.forEach(r => {
+        const lbl = (r.label || '').toLowerCase();
+        if (lbl === 'positive') pos++;
+        else if (lbl === 'neutral') neu++;
+        else if (lbl === 'negative') neg++;
+      });
+
+      const posPct = total > 0 ? Math.round((pos / total) * 100) : 0;
+      const neuPct = total > 0 ? Math.round((neu / total) * 100) : 0;
+      const negPct = total > 0 ? Math.round((neg / total) * 100) : 0;
+
+      // Update counters
+      document.getElementById('totalCount').textContent = total;
+      document.getElementById('posCount').textContent = pos;
+      document.getElementById('posPercent').textContent = `${posPct}%`;
+      document.getElementById('neuCount').textContent = neu;
+      document.getElementById('neuPercent').textContent = `${neuPct}%`;
+      document.getElementById('negCount').textContent = neg;
+      document.getElementById('negPercent').textContent = `${negPct}%`;
+
+      // Update Multi-segment progress bar
+      document.getElementById('barPos').style.width = `${posPct}%`;
+      document.getElementById('barNeu').style.width = `${neuPct}%`;
+      document.getElementById('barNeg').style.width = `${negPct}%`;
+
+      // Verdict
+      const badge = document.getElementById('sentimentVerdictBadge');
+      const desc = document.getElementById('sentimentVerdictDesc');
+      if (pos >= neg && pos >= neu) {
+        badge.className = "px-3 py-1 rounded-full text-xs font-bold uppercase tracking-wider bg-emerald-500/20 text-emerald-400 border border-emerald-500/30";
+        badge.textContent = "Phần lớn tích cực";
+        desc.textContent = `Khán giả có phản hồi rất tốt với ${posPct}% bình luận mang tính khen ngợi, ủng hộ.`;
+      } else if (neg >= pos && neg >= neu) {
+        badge.className = "px-3 py-1 rounded-full text-xs font-bold uppercase tracking-wider bg-rose-500/20 text-rose-400 border border-rose-500/30";
+        badge.textContent = "Phần lớn tiêu cực";
+        desc.textContent = `Cần lưu ý: Có tới ${negPct}% bình luận mang tính phàn nàn, không hài lòng.`;
+      } else {
+        badge.className = "px-3 py-1 rounded-full text-xs font-bold uppercase tracking-wider bg-amber-500/20 text-amber-400 border border-amber-500/30";
+        badge.textContent = "Trung tính / Thảo luận";
+        desc.textContent = `Bình luận phần lớn mang tính trung lập, hỏi đáp hoặc đóng góp ý kiến (${neuPct}%).`;
+      }
+
+      // Render Donut Chart
+      updateChart(pos, neu, neg);
+
+      // Render Comment List
+      renderCommentsList();
+
+      // Smooth scroll to results
+      document.getElementById('resultsSection').scrollIntoView({ behavior: 'smooth' });
+    }
+
+    function updateChart(pos, neu, neg) {
+      const ctx = document.getElementById('sentimentChart').getContext('2d');
+      if (sentimentChart) {
+        sentimentChart.destroy();
+      }
+
+      sentimentChart = new Chart(ctx, {
+        type: 'doughnut',
+        data: {
+          labels: ['Tích cực', 'Trung tính', 'Tiêu cực'],
+          datasets: [{
+            data: [pos, neu, neg],
+            backgroundColor: ['#10B981', '#F59E0B', '#F43F5E'],
+            borderColor: '#0F172A',
+            borderWidth: 3,
+            hoverOffset: 4
+          }]
+        },
+        options: {
+          responsive: true,
+          maintainAspectRatio: false,
+          plugins: {
+            legend: { display: false }
+          },
+          cutout: '72%'
+        }
+      });
+    }
+
+    function filterResults(type) {
+      currentFilter = type;
+      document.querySelectorAll('.filter-tab').forEach(t => {
+        t.className = "filter-tab px-3 py-1 rounded-lg font-medium text-slate-400 hover:text-white";
+      });
+      const activeBtn = document.getElementById(`filter-${type}`);
+      if (activeBtn) {
+        activeBtn.className = "filter-tab px-3 py-1 rounded-lg font-medium bg-slate-800 text-white";
+      }
+      renderCommentsList();
+    }
+
+    function renderCommentsList() {
+      const container = document.getElementById('commentsList');
+      container.innerHTML = '';
+
+      const filtered = rawResults.filter(item => {
+        if (currentFilter === 'all') return true;
+        return (item.label || '').toLowerCase() === currentFilter;
+      });
+
+      document.getElementById('filteredCount').textContent = `${filtered.length} / ${rawResults.length}`;
+
+      if (filtered.length === 0) {
+        container.innerHTML = `
+          <div class="py-12 text-center text-slate-500 text-sm">
+            <i class="fa-solid fa-inbox text-3xl mb-2 block"></i>
+            Không có bình luận nào khớp với bộ lọc này.
+          </div>
+        `;
+        return;
+      }
+
+      filtered.forEach((item, idx) => {
+        const lbl = (item.label || '').toLowerCase();
+        let badgeClass = '';
+        let badgeIcon = '';
+        let badgeText = '';
+        let barColor = '';
+
+        if (lbl === 'positive') {
+          badgeClass = 'bg-emerald-500/10 text-emerald-400 border-emerald-500/20';
+          badgeIcon = 'fa-regular fa-face-smile';
+          badgeText = 'Tích cực';
+          barColor = 'bg-emerald-500';
+        } else if (lbl === 'neutral') {
+          badgeClass = 'bg-amber-500/10 text-amber-400 border-amber-500/20';
+          badgeIcon = 'fa-regular fa-face-meh';
+          badgeText = 'Trung tính';
+          barColor = 'bg-amber-500';
+        } else {
+          badgeClass = 'bg-rose-500/10 text-rose-400 border-rose-500/20';
+          badgeIcon = 'fa-regular fa-face-frown';
+          badgeText = 'Tiêu cực';
+          barColor = 'bg-rose-500';
+        }
+
+        const confidencePct = Math.round((item.confidence || 0) * 100);
+
+        const card = document.createElement('div');
+        card.className = 'p-4 hover:bg-slate-800/40 transition flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4';
+        card.innerHTML = `
+          <div class="flex-1 space-y-1">
+            <p class="text-sm text-slate-100 leading-relaxed font-sans">${escapeHtml(item.comment)}</p>
+          </div>
+          
+          <div class="flex items-center gap-4 shrink-0 w-full sm:w-auto justify-between sm:justify-end">
+            <!-- Badge -->
+            <span class="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-semibold border ${badgeClass}">
+              <i class="${badgeIcon}"></i>
+              ${badgeText}
+            </span>
+
+            <!-- Confidence Bar -->
+            <div class="w-24 text-right">
+              <span class="text-xs font-mono font-semibold text-slate-300">${confidencePct}%</span>
+              <div class="w-full bg-slate-800 h-1.5 rounded-full mt-1 overflow-hidden">
+                <div class="${barColor} h-full rounded-full" style="width: ${confidencePct}%"></div>
+              </div>
+            </div>
+          </div>
+        `;
+        container.appendChild(card);
+      });
+    }
+
+    function escapeHtml(string) {
+      return String(string).replace(/[&<>"'`=\/]/g, function (s) {
+        return {
+          '&': '&amp;',
+          '<': '&lt;',
+          '>': '&gt;',
+          '"': '&quot;',
+          "'": '&#39;',
+          '/': '&#x2F;',
+          '`': '&#x60;',
+          '=': '&#x3D;'
+        }[s];
+      });
+    }
+
+    function copyJSON() {
+      navigator.clipboard.writeText(JSON.stringify(rawResults, null, 2));
+      alert("Đã sao chép kết quả JSON vào clipboard!");
+    }
+
+    function exportCSV() {
+      if (rawResults.length === 0) return;
+      let csv = "comment,label,confidence\n";
+      rawResults.forEach(r => {
+        const cleanComment = `"${(r.comment || '').replace(/"/g, '""')}"`;
+        csv += `${cleanComment},${r.label},${r.confidence}\n`;
+      });
+      const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+      const url = URL.createObjectURL(blob);
+      const link = document.createElement("a");
+      link.setAttribute("href", url);
+      link.setAttribute("download", `youtube_sentiment_${Date.now()}.csv`);
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+    }
+  </script>
+</body>
+</html>
+

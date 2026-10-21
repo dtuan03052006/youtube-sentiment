@@ -1,0 +1,24 @@
+name: Sync to Hugging Face Spaces
+
+on:
+  push:
+    branches: [main]
+  # Cho phép bấm nút chạy thủ công trên GitHub nếu cần
+  workflow_dispatch:
+
+jobs:
+  sync-to-hub:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          lfs: true
+
+      - name: Push sang Hugging Face Space
+        env:
+          HF_TOKEN: ${{ secrets.HF_TOKEN }}
+        run: |
+          # Đồng bộ toàn bộ code sang kho của Hugging Face
+          git push --force https://dtuan03052006:$HF_TOKEN@huggingface.co/spaces/dtuan03052006/youtube-sentiment main
