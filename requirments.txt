@@ -1,29 +1,12 @@
-# Deep Learning & PyTorch
-torch>=2.0.0
-
-# Web API & UI
-fastapi>=0.110.0
-uvicorn[standard]>=0.29.0
-pydantic>=2.0.0
-python-multipart>=0.0.9
-gradio>=4.0.0
-
-# Data Processing & Machine Learning Pipeline
-numpy>=1.24.0
-pyyaml>=6.0.0
-
-# NLP & Text Preprocessing
-nltk>=3.8.0
-regex>=2023.0.0
-
-# Utilities & MLOps
-tqdm>=4.66.0
-requests>=2.31.0
-dvc>=3.0.0
+torch
 fastapi
-uvicorn
+uvicorn[standard]
 pydantic
-torch --index-url https://download.pytorch.org/whl/cpu
-gradio
-
+python-multipart
+numpy
+pyyaml
+nltk
+regex
+tqdm
+requests
 
