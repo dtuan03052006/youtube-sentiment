@@ -97,3 +97,7 @@ async def predict_sentiment(request: CommentRequest):
             "confidence": round(float(pros[pred_id]), 4)
         })
     return results
+
+if __name__ == "__main__":
+    import uvicorn
+    uvicorn.run(app, host="127.0.0.1", port=8000)
