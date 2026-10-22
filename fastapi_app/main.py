@@ -43,7 +43,7 @@ class CommentRequest(BaseModel):
 
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 model_path = os.path.join(os.path.dirname(__file__), "best_model.pt")
-vob_path = os.path.join(os.path.dirname(__file__), "vocab(1).pkl")
+vob_path = os.path.join(os.path.dirname(__file__), "vocab.pkl")
 
 with open(vob_path, "rb") as f:
     vocab = pickle.load(f)

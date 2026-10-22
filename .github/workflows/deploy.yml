@@ -1,4 +1,4 @@
-name: Sync to Hugging Face Spaces
+name: Deploy to Hugging Face Spaces
 
 on:
   push:
@@ -6,21 +6,21 @@ on:
   workflow_dispatch:
 
 jobs:
-  sync-to-hub:
+  deploy:
     runs-on: ubuntu-latest
     steps:
-      - name: Checkout code
+      - name: Checkout repository
         uses: actions/checkout@v4
         with:
           fetch-depth: 0
           lfs: true
 
-      - name: Push sang Hugging Face Space
+      - name: Push to Hugging Face Space
         env:
           HF_TOKEN: ${{ secrets.HF_TOKEN }}
         run: |
           if [ -z "$HF_TOKEN" ]; then
-            echo "HF_TOKEN is missing in GitHub Secrets. Skipping sync to Hugging Face Space."
-            exit 0
+            echo "::error::HF_TOKEN secret is missing! Please configure HF_TOKEN in GitHub repository secrets."
+            exit 1
           fi
-          git push --force https://oauth2:${youtube_sentiments}@huggingface.co/spaces/TuanAnh0305/youtube-sentiment-api HEAD:main
+          git push --force https://oauth2:${YOUTUBE_SENTIMENTS}@huggingface.co/spaces/TuanAnh0305/youtube-sentiment-api HEAD:main
