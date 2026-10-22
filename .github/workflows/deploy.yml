@@ -17,10 +17,11 @@ jobs:
 
       - name: Push to Hugging Face Space
         env:
-          HF_TOKEN: ${{ secrets.HF_TOKEN }}
+          HF_TOKEN: ${{ secrets.YOUTUBE_SENTIMENTS || secrets.HF_TOKEN }}
         run: |
           if [ -z "$HF_TOKEN" ]; then
-            echo "::error::HF_TOKEN secret is missing! Please configure HF_TOKEN in GitHub repository secrets."
+            echo "::error::Secret YOUTUBE_SENTIMENTS chưa được tìm thấy trong GitHub Secrets!"
             exit 1
           fi
-          git push --force https://oauth2:${YOUTUBE_SENTIMENTS}@huggingface.co/spaces/TuanAnh0305/youtube-sentiment HEAD:main
+          git push --force https://oauth2:${HF_TOKEN}@huggingface.co/spaces/TuanAnh0305/youtube-sentiment HEAD:main
+
