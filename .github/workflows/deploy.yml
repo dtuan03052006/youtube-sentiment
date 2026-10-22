@@ -23,4 +23,4 @@ jobs:
             echo "::error::HF_TOKEN secret is missing! Please configure HF_TOKEN in GitHub repository secrets."
             exit 1
           fi
-          git push --force https://oauth2:${YOUTUBE_SENTIMENTS}@huggingface.co/spaces/TuanAnh0305/youtube-sentiment-api HEAD:main
+          git push --force https://oauth2:${YOUTUBE_SENTIMENTS}@huggingface.co/spaces/TuanAnh0305/youtube-sentiment HEAD:main
