@@ -23,4 +23,4 @@ jobs:
             echo "HF_TOKEN is missing in GitHub Secrets. Skipping sync to Hugging Face Space."
             exit 0
           fi
-          git push --force https://oauth2:${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}@huggingface.co/spaces/TuanAnh0305/youtube-sentiment-api HEAD:main
+          git push --force https://oauth2:${youtube_sentiments}@huggingface.co/spaces/TuanAnh0305/youtube-sentiment-api HEAD:main
