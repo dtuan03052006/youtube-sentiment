@@ -1,12 +1,7 @@
-torch
 fastapi
-uvicorn[standard]
+uvicorn
 pydantic
-python-multipart
+gradio
+torch --index-url https://download.pytorch.org/whl/cpu
+scikit-learn
 numpy
-pyyaml
-nltk
-regex
-tqdm
-requests
-
