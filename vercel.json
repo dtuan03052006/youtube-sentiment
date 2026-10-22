@@ -1,5 +1,6 @@
 {
-  "framework": null,
-  "outputDirectory": "fastapi_app/static"
+  "cleanUrls": true,
+  "rewrites": [
+    { "source": "/(.*)", "destination": "/index.html" }
+  ]
 }
-
