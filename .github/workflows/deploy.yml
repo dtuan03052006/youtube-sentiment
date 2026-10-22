@@ -15,12 +15,43 @@ jobs:
           fetch-depth: 0
           lfs: true
 
-      - name: Push to Hugging Face Space
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.10"
+
+      - name: Install huggingface_hub
+        run: pip install --upgrade huggingface_hub
+
+      - name: Upload to Hugging Face Space
         env:
-          HF_TOKEN: ${{ secrets.YOUTUBE_SENTIMENTS || secrets.HF_TOKEN  }}
+          HF_TOKEN: ${{ secrets.YOUTUBE_SENTIMENTS || secrets.HF_TOKEN }}
         run: |
           if [ -z "$HF_TOKEN" ]; then
-            echo "::error::Secret YOUTUBE_SENTIMENTS chưa được tìm thấy trong GitHub Secrets!"
+            echo "::error::Secret YOUTUBE_SENTIMENTS (hoặc HF_TOKEN) chưa được tìm thấy trong GitHub Secrets!"
             exit 1
           fi
-          git push --force https://oauth2:${HF_TOKEN}@huggingface.co/spaces/TuanAnh0305/youtube-sentiment HEAD:main
+          python - << 'EOF'
+          import os
+          from huggingface_hub import HfApi
+
+          token = os.environ.get("HF_TOKEN")
+          repo_id = "TuanAnh0305/youtube-sentiment"
+
+          print(f"Đang đồng bộ code và model sang Hugging Face Space: {repo_id}...")
+          api = HfApi(token=token)
+          api.upload_folder(
+              folder_path=".",
+              repo_id=repo_id,
+              repo_type="space",
+              ignore_patterns=[
+                  ".git/**",
+                  ".github/**",
+                  ".venv/**",
+                  "data/**",
+                  "**/*.pyc",
+                  "**/__pycache__/**"
+              ]
+          )
+          print("Đã tải thành công toàn bộ mã nguồn và model lên Hugging Face Space!")
+          EOF
