@@ -376,8 +376,13 @@
       analyzeBtn.disabled = true;
       analyzeBtn.innerHTML = `<i class="fa-solid fa-circle-notch fa-spin"></i><span>Đang phân tích...</span>`;
 
+      // Tự động kết nối backend Hugging Face khi chạy từ Vercel
+      const API_BASE = (window.location.hostname.includes("vercel.app") || window.location.protocol === "file:")
+        ? "https://tuananh0305-youtube-sentiment.hf.space"
+        : "";
+
       try {
-        const response = await fetch('/predict', {
+        const response = await fetch(`${API_BASE}/predict`, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ comments: comments })
